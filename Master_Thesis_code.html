@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Medical_Visual</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://unpkg.com/topojson@3"></script>
+    <style>
+        div{ border:1px solid #000}
+        .parent {
+            display: grid;
+            grid-template-columns: repeat(320, 1fr);
+            grid-template-rows: repeat(200, 1fr);
+            grid-column-gap: 0px;
+            grid-row-gap: 0px;
+        }
+
+        .div1 { grid-area: 1 / 1 / 201 / 81; }
+        .div2 { grid-area: 1 / 81 / 41 / 161; }
+        .div3 { grid-area: 1 / 161 / 21 / 241; }
+        .div4 { grid-area: 21 / 161 / 41 / 241; }
+        .div5 { grid-area: 41 / 81 / 201 / 241; }
+        .div6 { grid-area: 1 / 241 / 101 / 321; }
+        .div7 { grid-area: 101 / 241 / 201 / 321; }
+
+
+        .tract :hover {
+            fill: gold;
+        }
+
+        .state-borders {
+            fill: none;
+            stroke: #fff;
+            stroke-width: 0.5px;
+            stroke-linejoin: round;
+            stroke-linecap: round;
+            pointer-events: none;
+        }
+
+
+
+    </style>
+    <script>
+        function allowDrop(ev)
+        {
+            console.log("TEST");
+            ev.preventDefault();
+        }
+
+        function drag(ev)
+        {
+            ev.dataTransfer.setData("Text",ev.target.id); //get the type of the data to differenciate
+            ev.dataTransfer.setData("dragtype",'attribute');
+        }
+
+        function drop(ev) //ev.target can tell where it is dropped
+        {
+            ev.preventDefault();
+            let str = ['HARMONIZED_SMK', 'index_MATCHED_LEVEL', 'SEX_CD', 'readm_30day', 'readm_1day', 'readm_2day', 'readm_3day', 'readm_4day', 'readm_5day', 'readm_6day', 'readm_7day', 'readm_8_30day', 'base_RACE_RECODE', 'index_3_hosp_1yr', 'discharge_DOW', 'index_admit_date_dow'];
+            /*str['HARMONIZED_SMK'] = ['CURRENT', 'FORMER', 'NA', 'NEVER'];
+            str['index_MATCHED_LEVEL'] = ['Street', 'ZIP'];
+            str['SEX_CD'] = ['M', 'F'];
+            str['readm_30day'] = ['NA', 'FALSE', 'TRUE'];
+            str['readm_1day'] = ['NA', 'FALSE', 'TRUE'];
+            str['readm_2day'] = ['NA', 'FALSE', 'TRUE'];
+            str['readm_3day'] = ['NA', 'FALSE', 'TRUE'];
+            str['readm_4day'] = ['NA', 'FALSE', 'TRUE'];
+            str['readm_5day'] = ['NA', 'FALSE', 'TRUE'];
+            str['readm_6day'] = ['NA', 'FALSE', 'TRUE'];
+            str['readm_7day'] = ['NA', 'FALSE', 'TRUE'];
+            str['readm_8_30day'] = ['NA', 'FALSE', 'TRUE'];
+            str['base_RACE_RECODE'] = ['BLACK', 'OTHER', 'WHITE'];
+            str['index_3_hosp_1yr'] = ['FALSE', 'TRUE'];
+            str['discharge_DOW'] = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+            str['index_admit_date_dow'] = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];*/
+            var datas = ev.dataTransfer.getData("text");
+            var copy = document.createElement("div");
+            var original = document.getElementById(datas);
+            //copy.innerHTML = original.innerHTML + "<br><input class='min' value='0'></input> - <input class='min' value='0'></input>";
+            //ev.target.appendChild(copy);
+            let dest = ev.target.id
+            if (dest == 'filterbox') {
+                copy.id = datas;
+                if (str.includes(datas)) {
+                    copy.className = 'strfilter';
+                    if (datas == 'HARMONIZED_SMK') {
+                        copy.innerHTML = original.innerHTML + "<br><input id='CURRENT' type='checkbox' name='HARMONIZED_SMK' value='CURRENT' onchange='filterchange()' checked></input><label for='CURRENT'>CURRENT</label>" +
+                            "<input id='FORMER' type='checkbox' name='HARMONIZED_SMK' value='FORMER' onchange='filterchange()' checked></input><label for='FORMER'>FORMER</label>" +
+                            "<input id='NA' type='checkbox' name='HARMONIZED_SMK' value='NA' onchange='filterchange()' checked></input><label for='NA'>NA</label>" +
+                            "<input id='NEVER' type='checkbox' name='HARMONIZED_SMK' value='NEVER' onchange='filterchange()' checked></input><label for='NEVER'>NEVER</label>";
+                    } else if (datas == 'index_MATCHED_LEVEL') {
+                        copy.innerHTML = original.innerHTML + "<br><input id='Street' type='checkbox' name='index_MATCHED_LEVEL' value='Street' onchange='filterchange()' checked></input><label for='Street'>Street</label>" +
+                            "<input id='ZIP' type='checkbox' name='index_MATCHED_LEVEL' value='ZIP' onchange='filterchange()' checked></input><label for='ZIP'>ZIP</label>";
+                    } else if (datas == 'SEX_CD') {
+                        copy.innerHTML = original.innerHTML + "<br><input id='M' type='checkbox' name='SEX_CD' value='M' onchange='filterchange()' checked></input><label for='M'>M</label>" +
+                            "<input id='F' type='checkbox' name='SEX_CD' value='F' onchange='filterchange()' checked></input><label for='F'>F</label>";
+                    } else if (datas == 'readm_30day') {
+                        copy.innerHTML = original.innerHTML + "<br><input id='FALSE' type='checkbox' name='readm_30day' value='FALSE' onchange='filterchange()' checked></input><label for='FALSE'>FALSE</label>" +
+                            "<input id='NA' type='checkbox' name='readm_30day' value='NA' onchange='filterchange()' checked></input><label for='NA'>NA</label>" +
+                            "<input id='TRUE' type='checkbox' name='readm_30day' value='TRUE' onchange='filterchange()' checked></input><label for='TRUE'>TRUE</label>";
+                    } else if (datas == 'readm_1day') {
+                        copy.innerHTML = original.innerHTML + "<br><input id='FALSE' type='checkbox' name='readm_1day' value='FALSE' onchange='filterchange()' checked></input><label for='FALSE'>FALSE</label>" +
+                            "<input id='NA' type='checkbox' name='readm_1day' value='NA' onchange='filterchange()' checked></input><label for='NA'>NA</label>" +
+                            "<input id='TRUE' type='checkbox' name='readm_1day' value='TRUE' onchange='filterchange()' checked></input><label for='TRUE'>TRUE</label>";
+                    } else if (datas == 'readm_2day') {
+                        copy.innerHTML = original.innerHTML + "<br><input id='FALSE' type='checkbox' name='readm_2day' value='FALSE' onchange='filterchange()' checked></input><label for='FALSE'>FALSE</label>" +
+                            "<input id='NA' type='checkbox' name='readm_2day' value='NA' onchange='filterchange()' checked></input><label for='NA'>NA</label>" +
+                            "<input id='TRUE' type='checkbox' name='readm_2day' value='TRUE' onchange='filterchange()' checked></input><label for='TRUE'>TRUE</label>";
+                    } else if (datas == 'readm_3day') {
+                        copy.innerHTML = original.innerHTML + "<br><input id='FALSE' type='checkbox' name='readm_3day' value='FALSE' onchange='filterchange()' checked></input><label for='FALSE'>FALSE</label>" +
+                            "<input id='NA' type='checkbox' name='readm_3day' value='NA' onchange='filterchange()' checked></input><label for='NA'>NA</label>" +
+                            "<input id='TRUE' type='checkbox' name='readm_3day' value='TRUE' onchange='filterchange()' checked></input><label for='TRUE'>TRUE</label>";
+                    } else if (datas == 'readm_4day') {
+                        copy.innerHTML = original.innerHTML + "<br><input id='FALSE' type='checkbox' name='readm_4day' value='FALSE' onchange='filterchange()' checked></input><label for='FALSE'>FALSE</label>" +
+                            "<input id='NA' type='checkbox' name='readm_4day' value='NA' onchange='filterchange()' checked></input><label for='NA'>NA</label>" +
+                            "<input id='TRUE' type='checkbox' name='readm_4day' value='TRUE' onchange='filterchange()' checked></input><label for='TRUE'>TRUE</label>";
+                    } else if (datas == 'readm_5day') {
+                        copy.innerHTML = original.innerHTML + "<br><input id='FALSE' type='checkbox' name='readm_5day' value='FALSE' onchange='filterchange()' checked></input><label for='FALSE'>FALSE</label>" +
+                            "<input id='NA' type='checkbox' name='readm_5day' value='NA' onchange='filterchange()' checked></input><label for='NA'>NA</label>" +
+                            "<input id='TRUE' type='checkbox' name='readm_5day' value='TRUE' onchange='filterchange()' checked></input><label for='TRUE'>TRUE</label>";
+                    } else if (datas == 'readm_6day') {
+                        copy.innerHTML = original.innerHTML + "<br><input id='FALSE' type='checkbox' name='readm_6day' value='FALSE' onchange='filterchange()' checked></input><label for='FALSE'>FALSE</label>" +
+                            "<input id='NA' type='checkbox' name='readm_6day' value='NA' onchange='filterchange()' checked></input><label for='NA'>NA</label>" +
+                            "<input id='TRUE' type='checkbox' name='readm_6day' value='TRUE' onchange='filterchange()' checked></input><label for='TRUE'>TRUE</label>";
+                    } else if (datas == 'readm_7day') {
+                        copy.innerHTML = original.innerHTML + "<br><input id='FALSE' type='checkbox' name='readm_7day' value='FALSE' onchange='filterchange()' checked></input><label for='FALSE'>FALSE</label>" +
+                            "<input id='NA' type='checkbox' name='readm_7day' value='NA' onchange='filterchange()' checked></input><label for='NA'>NA</label>" +
+                            "<input id='TRUE' type='checkbox' name='readm_7day' value='TRUE' onchange='filterchange()' checked></input><label for='TRUE'>TRUE</label>";
+                    } else if (datas == 'readm_8_30day') {
+                        copy.innerHTML = original.innerHTML + "<br><input id='FALSE' type='checkbox' name='readm_8_30day' value='FALSE' onchange='filterchange()' checked></input><label for='FALSE'>FALSE</label>" +
+                            "<input id='NA' type='checkbox' name='readm_8_30day' value='NA' onchange='filterchange()' checked></input><label for='NA'>NA</label>" +
+                            "<input id='TRUE' type='checkbox' name='readm_8_30day' value='TRUE' onchange='filterchange()' checked></input><label for='TRUE'>TRUE</label>";
+                    } else if (datas == 'base_RACE_RECODE') {
+                        copy.innerHTML = original.innerHTML + "<br><input id='BLACK' type='checkbox' name='base_RACE_RECODE' value='BLACK' onchange='filterchange()' checked></input><label for='BLACK'>BLACK</label>" +
+                            "<input id='OTHER' type='checkbox' name='base_RACE_RECODE' value='OTHER' onchange='filterchange()' checked></input><label for='OTHER'>OTHER</label>" +
+                            "<input id='WHITE' type='checkbox' name='base_RACE_RECODE' value='WHITE' onchange='filterchange()' checked></input><label for='WHITE'>WHITE</label>";
+                    } else if (datas == 'index_3_hosp_1yr') {
+                        copy.innerHTML = original.innerHTML + "<br><input id='FALSE' type='checkbox' name='index_3_hosp_1yr' value='FALSE' onchange='filterchange()' checked></input><label for='FALSE'>FALSE</label>" +
+                            "<input id='TRUE' type='checkbox' name='index_3_hosp_1yr' value='TRUE' onchange='filterchange()' checked></input><label for='TRUE'>TRUE</label>"
+                    } else if (datas == 'discharge_DOW') {
+                        copy.innerHTML = original.innerHTML + "<br><input id='Mon' type='checkbox' name='discharge_DOW' value='Mon' onchange='filterchange()' checked></input><label for='Mon'>Mon</label>" +
+                            "<input id='Tue' type='checkbox' name='discharge_DOW' value='Tue' onchange='filterchange()' checked></input><label for='Tue'>Tue</label>" +
+                            "<input id='Wed' type='checkbox' name='discharge_DOW' value='Wed' onchange='filterchange()' checked></input><label for='Wed'>Wed</label>" +
+                            "<input id='Thu' type='checkbox' name='discharge_DOW' value='Thu' onchange='filterchange()' checked></input><label for='Thu'>Thu</label>" +
+                            "<input id='Fri' type='checkbox' name='discharge_DOW' value='Fri' onchange='filterchange()' checked></input><label for='Fri'>Fri</label>" +
+                            "<input id='Sat' type='checkbox' name='discharge_DOW' value='Sat' onchange='filterchange()' checked></input><label for='Sat'>Sat</label>" +
+                            "<input id='Sun' type='checkbox' name='discharge_DOW' value='Sun' onchange='filterchange()' checked></input><label for='Sun'>Sun</label>"
+                    } else if (datas == 'index_admit_date_dow') {
+                        copy.innerHTML = original.innerHTML + "<br><input id='Mon' type='checkbox' name='discharge_DOW' value='Mon' onchange='filterchange()' checked></input><label for='Mon'>Mon</label>" +
+                            "<input id='Tue' type='checkbox' name='discharge_DOW' value='Tue' onchange='filterchange()' checked></input><label for='Tue'>Tue</label>" +
+                            "<input id='Wed' type='checkbox' name='discharge_DOW' value='Wed' onchange='filterchange()' checked></input><label for='Wed'>Wed</label>" +
+                            "<input id='Thu' type='checkbox' name='discharge_DOW' value='Thu' onchange='filterchange()' checked></input><label for='Thu'>Thu</label>" +
+                            "<input id='Fri' type='checkbox' name='discharge_DOW' value='Fri' onchange='filterchange()' checked></input><label for='Fri'>Fri</label>" +
+                            "<input id='Sat' type='checkbox' name='discharge_DOW' value='Sat' onchange='filterchange()' checked></input><label for='Sat'>Sat</label>" +
+                            "<input id='Sun' type='checkbox' name='discharge_DOW' value='Sun' onchange='filterchange()' checked></input><label for='Sun'>Sun</label>"
+                    }
+                }
+                else {
+                    copy.className = 'filter';
+                    copy.innerHTML = original.innerHTML + "<br><input id='min' value='0' class='range' onchange='filterchange()'></input> - <input id='max' value='0' class='range' onchange='filterchange()'></input>";
+                }
+                    /*d3.select('.div2').select('.filterbox').select('#' +data)
+                    .append('input')
+                    .attr('id', 'min')
+                    .attr('value', '0')
+                    .attr('class', 'range')
+                    .attr('variable', data)
+                    .attr('onchange', 'filterchange()');
+                d3.select('#' +data)
+                    .append('input')
+                    .attr('id', 'max')
+                    .attr('value', '0')
+                    .attr('class', 'range')
+                    .attr('variable', data)
+                    .attr('onchange', 'filterchange()');*/
+
+            }
+            else if (dest == 'groupbox') {
+                copy.innerHTML = original.innerHTML + "<br><input id='nummap' value='0'></input>";
+                /*d3.select(".div3")
+                    .append('input')
+                    .attr('id', 'nummap')
+                    .attr('onchange', 'mapnum()')
+                    .style("width", "100px")
+                    .style("height", "30px")
+                    .style("border", "1px solid red");*/
+            }
+            ev.target.appendChild(copy);
+        }
+
+        /*function strfilterchange() {
+            str = {};
+            let sf = d3.select('.div2').selectAll('.strfilter');
+            sf.each(function (d, i, nodes) {
+                let variable_name = this.getAttribute('id');
+                if (!(variable_name in str)) {
+                    str[variable_name] = {};
+                }
+            })
+            for (i in str) {
+                let len = document.getElementsByName(i);
+                str[i] = [];
+                for (var j = 0; j < len.length; j++) {
+                    if (len[j].checked) {
+                        str[i].push(len[j].value);
+                    }
+                }
+            }
+        }*/
+
+        function filterchange()
+        {
+            str = {};
+            let sf = d3.select('.div2').selectAll('.strfilter');
+            sf.each(function (d, i, nodes) {
+                let variable_name = this.getAttribute('id');
+                if (!(variable_name in str)) {
+                    str[variable_name] = {};
+                }
+            })
+            for (i in str) {
+                let len = document.getElementsByName(i);
+                str[i] = [];
+                for (var j = 0; j < len.length; j++) {
+                    if (len[j].checked) {
+                        str[i].push(len[j].value);
+                    }
+                }
+            }
+            variables = {};
+            let f = d3.select('.div2').selectAll('.filter');
+            f.each(function(d,i,nodes) {
+                let variable_name = this.getAttribute('id');
+                if (!(variable_name in variables)) {
+                    variables[variable_name] = {}
+                }
+            })
+            let mi = [];
+            let ma = [];
+            let fmi = d3.selectAll('#min');
+            let fma = d3.selectAll('#max');
+            fmi.each(function (d,i,nodes) {
+                mi[i] = this.value;
+            })
+            fma.each(function (d,i,nodes) {
+                ma[i] = this.value;
+            })
+            let date = ["DEATH_DATE", "BIRTHDT", "base_END_DATE", "FIRST_HF_DIAGNOSIS", "FIRST_VISIT"];
+            let n_filter = 0;
+            for (i in variables) {
+                if (date.includes(i)) {
+                    variables[i]['min'] = new Date(mi[n_filter]);
+                    variables[i]['max'] = new Date(ma[n_filter]);
+                }
+                else {
+                    variables[i]['min'] = +mi[n_filter];
+                    variables[i]['max'] = +ma[n_filter];
+                    n_filter++;}
+            }
+            Promise.all([
+                d3.json("2011.json"),
+                d3.json("county_maps/nc-counties.json"),
+                d3.csv("patients.csv"),
+                variables,
+                str
+            ])
+                .then(render);
+        }
+
+        function mapnum()
+        {
+            let n = document.getElementById("nummap").value;
+            for (var i = 1; i < n; i++) {
+                d3.select(".div3")
+                    .append('input')
+                    .attr('id', 'breakp'+i)
+                    .style("width", "100px")
+                    .style("height", "30px")
+                    .style("border", "1px solid blue");
+            }
+        }
+    </script>
+</head>
+<body>
+<div class="parent">
+    <div class="div1">Attributes</div>
+    <div class="div2">Filters </div>
+    <div class="div3">Group by </div>
+    <div class="div4">Plot items </div>
+    <div class="div5">
+        Maps
+        <svg id="nc_census_tracts" style="width: 500px; height: 300px; border: 0px solid black;"></svg>
+    </div>
+    <div class="div6">Data comparison </div>
+    <div class="div7">Model result </div>
+</div>
+<script>
+    //let variables = {};
+    Promise.all([
+        d3.json("2011.json"),
+        d3.json("county_maps/nc-counties.json"),
+        d3.csv("patients.csv")
+    ])
+        .then(show_attr);
+    // Loading the map data and the state statistics, then render when done.
+    Promise.all([
+        d3.json("2011.json"),
+        d3.json("county_maps/nc-counties.json"),
+        d3.csv("patients.csv")
+    ])
+        .then(render);
+
+    function show_attr(data) {
+        let nc_tract_patient_data = data[2];
+        for (i in nc_tract_patient_data.columns) {
+            d3.select(".div1")
+                .append('div')
+                .attr("id", nc_tract_patient_data.columns[i])
+                .attr("x", 0)
+                .attr("y", 0)
+                .attr("width", 150)
+                .attr("height", 30)
+                .attr("draggable", "true")
+                .attr("ondragstart", "drag(event);")
+                .style("border", "1px solid grey")
+                .html(nc_tract_patient_data.columns[i])
+        }
+
+        d3.select(".div2")
+            .append('div')
+            .attr("id", "filterbox")
+            .style("width", "250px")
+            .style("padding-bottom", "30px")
+            .attr("ondrop", "drop(event);")
+            .attr("ondragover", "allowDrop(event);")
+            .style("border", "1px solid black")
+
+        d3.select(".div3")
+            .append('div')
+            .attr("id", "groupbox")
+            .style("width", "250px")
+            .style("height", "30px")
+            .attr("ondrop", "drop(event);")
+            .attr("ondragover", "allowDrop(event);")
+            .style("border", "1px solid black")
+
+        d3.select(".div4")
+            .append('div')
+            .attr("id", "plotbox")
+            .style("width", "250px")
+            .style("height", "30px")
+            .attr("ondrop", "drop(event);")
+            .attr("ondragover", "allowDrop(event);")
+            .style("border", "1px solid black")
+    }
+
+    // Renders a map within the DOM element specified by svg_id.
+    function render(data) {
+        let nc_census_tract_data = data[0];
+        let nc_county_data = data[1];
+        let nc_tract_patient_data = data[2];
+        nc_tract_patient_data.forEach(d => {
+            d.MRN = +d.MRN;
+            d.base_Poor_or_fair_health_raw_value = +d.base_Poor_or_fair_health_raw_value;
+            d.base_totpop10 = +d.base_totpop10;
+            d.base_popdens10 = +d.base_popdens10;
+            d.base_urban10 = +d.base_urban10;
+            d.base_poverty10 = +d.base_poverty10;
+            d.base_HS_or_more10 = +d.base_HS_or_more10;
+            d.base_pubassist10 = +d.base_pubassist10;
+            d.base_unemployed10 = +d.base_unemployed10;
+            d.base_med_house_value10 = +d.base_med_house_value10;
+            d.FU_TIME_FIRST_VISIT = +d.FU_TIME_FIRST_VISIT;
+            d.FU_TIME_HF_DIAG = +d.FU_TIME_HF_DIAG;
+            d.age_at_index_readmit = +d.age_at_index_readmit;
+            d.VISIT_LENGTH_DISCHG = +d.VISIT_LENGTH_DISCHG;
+            d.index_X = +d.index_X;
+            d.index_Y = +d.index_Y;
+            d.readm_X = +d.readm_X;
+            d.readm_Y = +d.readm_Y;
+            d.index_EFF_START_DATE = new Date(d.index_EFF_START_DATE);
+            d.DEATH_DATE = new Date(d.DEATH_DATE);
+            d.BIRTHDT = new Date(d.BIRTHDT);
+            d.base_END_DATE = new Date(d.base_END_DATE);
+            d.FIRST_HF_DIAGNOSIS = new Date(d.FIRST_HF_DIAGNOSIS);
+            d.FIRST_VISIT = new Date(d.FIRST_VISIT);
+            
+            /*for (i in d.columns) {
+                d.columns = +d.columns;
+            }
+             */
+        });
+        let filtered_nc_tract_patient_data = nc_tract_patient_data;
+        let range = data[3];
+
+        for (i in range) {
+            filtered_nc_tract_patient_data = filtered_nc_tract_patient_data.filter(function (d) {return (d[i] >= range[i]['min']) && (d[i] <= range[i]['max']);});
+        }
+
+        let char = data[4];
+        for (i in char) {
+            filtered_nc_tract_patient_data = filtered_nc_tract_patient_data.filter(function (d) {return (char[i].includes(d[i]));});
+        }
+
+        //filtered_nc_tract_patient_data = filtered_nc_tract_patient_data.filter(function (d) {return (['CURRENT'].includes(d['HARMONIZED_SMK']));});
+
+        //let type = typeof nc_tract_patient_data[0]['base_totpop10'];
+
+        let grouped_patient_data = d3.rollup(
+            filtered_nc_tract_patient_data,
+            v => { return {
+                values: v,
+                count: v.length
+            }},
+            d => d.base_fips_bg10
+        );
+
+        let array_of_grouped_data = [...grouped_patient_data.values()];
+        let max_count = d3.max(array_of_grouped_data, v=>v.count);
+
+        for (i in nc_census_tract_data.features)
+        {
+            if (grouped_patient_data.get(nc_census_tract_data.features[i].properties.GEOID) == undefined) {
+                grouped_patient_data.set(nc_census_tract_data.features[i].properties.GEOID, {count: 0});
+            }
+        }
+
+        /*grouped_patient_data = grouped_patient_data.reduce((indexed_data, d) => {
+            // While we iterate, find the max population to use in our color scale.
+            if (indexed_data.maxpatients < d.count) {
+                indexed_data.maxpatients = d.count;
+            }
+            return indexed_data;
+        }, {maxpatients: 0});*/
+
+        /*for (i in nc_tract_patient_data.columns) {
+            d3.select(".div1")
+                .append('div')
+                .attr("id", nc_tract_patient_data.columns[i])
+                .attr("x", 0)
+                .attr("y", 0)
+                .attr("width", 150)
+                .attr("height", 30)
+                .attr("draggable", "true")
+                .attr("ondragstart", "drag(event);")
+                .style("border", "1px solid red")
+                .html(nc_tract_patient_data.columns[i])
+        }
+
+        d3.select(".div2")
+            .append('div')
+            .attr("id", "filterbox")
+            .style("width", "250px")
+            .style("padding-bottom", "30px")
+            .attr("ondrop", "drop(event);")
+            .attr("ondragover", "allowDrop(event);")
+            .style("border", "1px solid red")
+
+        d3.select(".div3")
+            .append('div')
+            .attr("id", "groupbox")
+            .style("width", "250px")
+            .style("height", "30px")
+            .attr("ondrop", "drop(event);")
+            .attr("ondragover", "allowDrop(event);")
+            .style("border", "1px solid red")
+
+        d3.select(".div4")
+            .append('div')
+            .attr("id", "plotbox")
+            .style("width", "250px")
+            .style("height", "30px")
+            .attr("ondrop", "drop(event);")
+            .attr("ondragover", "allowDrop(event);")
+            .style("border", "1px solid red")*/
+
+        let projection = d3.geoConicConformal()
+            .parallels([34 + 20 / 60, 36 + 10 / 60])
+            .rotate([79, 0])
+            .fitSize([500,300], nc_census_tract_data);
+
+        // Define the path generator using the projection.
+        let path = d3.geoPath().projection(projection);
+
+        // Select the SVG element for the map.
+        let svg = d3.select("#nc_census_tracts");
+
+        // Define a color scale for the map.
+        let colormap = d3.scaleLinear().domain([0,max_count]).range(["silver", "red"]);
+
+        // Draw the tract map.
+        svg.append("g")
+            .attr("class", "tract")
+            .selectAll("path")
+            .data(nc_census_tract_data.features)
+            .enter().append("path")
+            .attr("fill", d=>{
+                let tract = grouped_patient_data.get(d.properties.GEOID);
+                let patient = tract.count;
+                return colormap(patient);
+            })
+            .attr("stroke", "darkgray")
+            .attr("d", path);
+
+        // Draw the county map.
+        svg.append("g")
+            .attr("class", "county")
+            .selectAll("path")
+            .data(topojson.feature(nc_county_data, nc_county_data.objects.cb_2015_north_carolina_county_20m).features, function(d) {
+                return d.properties.NAME;
+            })
+            .enter().append("path")
+            .attr("fill", "none")
+            .attr("stroke", "black")
+            .attr("d", path);
+    }
+
+</script>
+</body>
+</html>
